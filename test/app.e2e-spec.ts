@@ -59,4 +59,17 @@ describe('Teste dos Módulos Usuário e Auth (e2e)', () => {
       })
       .expect(400);
   });
+
+  it('03 - Deve Autenticar o Usuário (Login)', async () => {
+    const resposta = request(app.getHttpServer())
+      .post('/usuarios/cadastrar')
+      .send({
+        usuario: 'root@root.com',
+        senha: 'rootroot',
+      })
+      .expect(200);
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    token = (await resposta).body.token;
+  });
 });
