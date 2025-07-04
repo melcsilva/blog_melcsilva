@@ -1,25 +1,62 @@
+import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import * as request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
 
-describe('AppController (e2e)', () => {
+describe('Teste dos Módulos Usuário e Auth (e2e)', () => {
+  let token: any;
+  let usuarioId: any;
   let app: INestApplication<App>;
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
+      imports: [
+        TypeOrmModule.forRoot({
+          type: 'sqlite',
+          database: ':memory',
+          entities: [__dirname + './../src/**/entities/*.entity.ts'],
+          synchronize: true,
+          dropSchema: true,
+        }),
+        AppModule,
+      ],
     }).compile();
 
     app = moduleFixture.createNestApplication();
+
+    app.useGlobalPipes(new ValidationPipe());
     await app.init();
   });
+  afterAll(async () => {
+    await app.close();
+  });
 
-  it('/ (GET)', () => {
-    return request(app.getHttpServer())
-      .get('/')
-      .expect(200)
-      .expect('Hello World!');
+  it('01 - Deve Cadastrar um novo Usuário', async () => {
+    const resposta = await request(app.getHttpServer())
+      .post('/usuarios/cadastrar')
+      .send({
+        nome: 'Root',
+        usuario: 'root@root.com',
+        senha: 'rootroot',
+        foto: '-',
+      })
+      .expect(201);
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    usuarioId = resposta.body.id;
+  });
+
+  it('02 - Não Deve Cadastrar um Usuário Duplicado', async () => {
+    return await request(app.getHttpServer())
+      .post('/usuarios/cadastrar')
+      .send({
+        nome: 'Root',
+        usuario: 'root@root.com',
+        senha: 'rootroot',
+        foto: '-',
+      })
+      .expect(400);
   });
 });
