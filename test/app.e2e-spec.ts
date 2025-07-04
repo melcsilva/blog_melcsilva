@@ -15,7 +15,7 @@ describe('Teste dos Módulos Usuário e Auth (e2e)', () => {
       imports: [
         TypeOrmModule.forRoot({
           type: 'sqlite',
-          database: ':memory',
+          database: ':memory:',
           entities: [__dirname + './../src/**/entities/*.entity.ts'],
           synchronize: true,
           dropSchema: true,
@@ -62,7 +62,7 @@ describe('Teste dos Módulos Usuário e Auth (e2e)', () => {
 
   it('03 - Deve Autenticar o Usuário (Login)', async () => {
     const resposta = request(app.getHttpServer())
-      .post('/usuarios/cadastrar')
+      .post('/usuarios/logar')
       .send({
         usuario: 'root@root.com',
         senha: 'rootroot',
@@ -71,5 +71,29 @@ describe('Teste dos Módulos Usuário e Auth (e2e)', () => {
 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     token = (await resposta).body.token;
+  });
+
+  it('04 - Deve Listar Todos os Usuários', async () => {
+    return await request(app.getHttpServer())
+      .get('/usuarios/all')
+      .set('Authorization', `${token}`)
+      .expect(200);
+  });
+
+  it('05 - Deve Atualizar um Usuário', async () => {
+    return request(app.getHttpServer())
+      .put('/usuarios/atualizar')
+      .set('Authorization', `${token}`)
+      .send({
+        id: usuarioId,
+        nome: 'Root Atualizado',
+        usuario: 'root@root.com',
+        senha: 'rootroot',
+        foto: '-',
+      })
+      .expect(200)
+      .then((resposta) => {
+        expect('Root Atualizado').toEqual(resposta.body.nome);
+      });
   });
 });
